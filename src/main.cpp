@@ -7,7 +7,8 @@
 #include <TinyGPSPlus.h>
 #include "DEV_Config.h"
 #include "L76X.h"
-#include "fdrs_modul.h"
+#include "fdrs_node_config.h"
+#include <fdrs_node.h>
 
 #define GPS_BAUD 115200
 #define SERIALMONITOR_BAUD 115200
@@ -16,7 +17,7 @@
 #define DEBUG_SD 1  // Debug-Ausgaben aktivieren
 
 // Globale Statusvariable
-int statusSensor = 99; // 99 = Initialisierung läuft, 0 = OK, andere Werte für Fehler
+float statusSensor = 99; // FDRS data 99 = Initialisierung läuft, 0 = OK, andere Werte für Fehler
 
 // const String BRANCH = "dev"; // Branch name
 // const String RELEASE = "2.4.0"; // Branch name
@@ -65,6 +66,8 @@ struct GPSState {
     double lastLon;
     double distance;
 } gpsState = {0};
+
+
 
 // The TinyGPS++ object
 TinyGPSPlus gps;
@@ -289,6 +292,57 @@ void processPosition() {
     Serial.println("processPosition() finished");
 }
 
+void sendStatus(int status) {
+    loadFDRS(status, STATUS_T); // Status 0 = OK, 99 = waiting for GNSS data
+    sendFDRS();
+  }
+
+
+  void sendGnss() {   // Sendet die RPM-Werte an den FDRS-Gateway 
+  
+    // FDRS data types
+    float fdrsLAT = gps.location.lat(); // GPS Latitude
+    float fdrsLON = gps.location.lng(); // GPS Longitude
+    float fdrsALT = gps.altitude.meters(); // GPS Altitude
+    float fdrsHDOP; // GPS HDOP
+    float fdrsSATS; // satellites   
+    float fdrsLATDIR; // direction lat 1/N 0/S
+    float fdrsLONDIR; // direction lon 1/E 0/W
+    float fdrsHEADING = gps.course.deg(); // heading
+    float fdrsPOSITIONDIFF; // positionDifference
+    float fdrsYEAR = gps.date.year(); // year
+    float fdrsMONTH = gps.date.month(); // month
+    float fdrsDAY = gps.date.day(); // day
+    float fdrsHOUR = gps.time.hour(); // hour
+    float fdrsMINUTE = gps.time.minute(); // minute
+    float fdrsSECOND = gps.time.second(); // second 
+      
+    loadFDRS(fdrsLAT, LATITUDE_T);
+    loadFDRS(fdrsLON, LONGITUDE_T);
+    loadFDRS(fdrsALT, ALTITUDE_T);
+    loadFDRS(fdrsHDOP, HDOP_T);
+    loadFDRS(fdrsSATS, LEVEL_T);
+    loadFDRS(fdrsLATDIR, UV_T);
+    loadFDRS(fdrsLONDIR, UV_T);
+    loadFDRS(fdrsHEADING, PM1_T);
+    loadFDRS(fdrsPOSITIONDIFF, PM2_5_T);
+    loadFDRS(fdrsYEAR, PM10_T);
+    loadFDRS(fdrsMONTH, POWER_T);
+    loadFDRS(fdrsDAY, POWER2_T);
+    loadFDRS(fdrsHOUR, ENERGY_T);
+    loadFDRS(fdrsMINUTE, ENERGY2_T);
+    loadFDRS(fdrsSECOND, WEIGHT_T);
+      
+    // DBG(sendFDRS()); // Debugging 
+    if (sendFDRS()) {
+    DBG("Big Success!");
+    } else {
+    DBG("Nope, not so much.");
+    }
+    }
+
+
+
 void setup() {
     Serial.begin(SERIALMONITOR_BAUD);
     delay(1000);
@@ -309,7 +363,7 @@ void setup() {
     Serial.println("GPS erfolgreich initialisiert");
     delay(100);
 
-    setupFDRS(); // Initialisiert FDRS 
+    beginFDRS(); // Initialisiert FDRS 
 
     Serial.println("Setup finished!");
     delay(2500);
@@ -359,7 +413,7 @@ void loop() {
             // Überprüfung ob die Position aktualisiert wurde und der HDOP-Wert unter dem Schwellenwert liegt
             // Aufrufen der Funktion zur Verarbeitung und Speicherung der Positionsdaten
             processPosition();
-            sendGnnsData();
+            sendGnss(); // Sendet die GNSS-Daten an den FDRS-Gateway 
             setLed(true, GREEN_LED_PIN, TEST);
             delay(150);
             setLed(false, GREEN_LED_PIN, TEST);
