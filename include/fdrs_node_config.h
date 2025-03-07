@@ -14,7 +14,7 @@
 // #define DEEP_SLEEP
 //#define POWER_CTRL    14
 
-#define FDRS_DEBUG     // Enable USB-Serial debugging
+// #define FDRS_DEBUG     // Enable USB-Serial debugging
 //#define DBG_LEVEL 0    // 0 for minimal messaging, 1 for troubleshooting, 2 for development
 
 // I2C - OLED or RTC
