@@ -35,6 +35,7 @@
 #define FDRS_DATA_TYPES
 
 #define STATUS_T        0  // Status 0 = OK, 1 = Error
+#define CURRENT_T       18 // Current
 #define IT_T            20 // RPM
 #define LATITUDE_T      21 // GPS Latitude
 #define LONGITUDE_T     22 // GPS Longitude
