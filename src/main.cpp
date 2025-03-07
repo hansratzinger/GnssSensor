@@ -1,8 +1,26 @@
+// G N S S - S E N S O R
+//
+// This code is part of the GNSS sensor project.
+// -  is used to send GNSS data to the FDRS gateway.
+// -  is based on the ESP32 WROOM-32 microcontroller.
+// -  uses the LC76 GNSS module to receive GNSS data.
+// -  uses the TinyGPS++ library to parse the GNSS data.
+// -  uses the FDRS library to send the GNSS data to the FDRS gateway.
+// -  uses the pins.h file to define the pin mappings.
+// -  uses the fdrs_node_config.h file to define the FDRS node configuration.
+// -  uses the fdrs_node.h file to define the FDRS node functions.
+// -  uses the DEV_Config.h file to define the SPI configuration.
+// -  uses the L76X.h file to define the LC76 GNSS module functions.
+// -  uses the GNSS_module.h file to define the GNSS module functions.
+// -  uses the SPI.h file to define the SPI functions.
+// -  uses the Arduino.h file to define the Arduino functions.
+
+// Release 1.0.0
+// HR 2025-03-07 NK Initial version
+
 #include <Arduino.h>
 #include <pins.h>
 #include "GNSS_module.h"
-#include <SPI.h>
-#include <FS.h>
 #include <TinyGPSPlus.h>
 #include "DEV_Config.h"
 #include "L76X.h"
@@ -11,54 +29,21 @@
 
 #define GPS_BAUD 115200
 #define SERIALMONITOR_BAUD 115200
-#define LOGGING_BUFFER_SIZE 256 // Nochmals erhöhte Puffergröße
-#define ESPNOW_SEND_TIMEOUT 200 // Timeout in Millisekunden
-#define DEBUG_SD 1  // Debug-Ausgaben aktivieren
 #define SWITCHTIME 1000 // Wartezeit von mindestens 1 Sekunde!
+
 // Globale Statusvariable
 float statusSensor = 99; // FDRS data 99 = Initialisierung läuft, 0 = OK, andere Werte für Fehler
 
-// const String BRANCH = "dev"; // Branch name
-// const String RELEASE = "2.4.0"; // Branch name
+// const String BRANCH = "main"; // Branch name
+// const String RELEASE = "1.0.0"; // Branch name
 
 // Deklaration von Variablen
-unsigned long timeDifference = 0;
-// double positionDifference = 0.0;
-// char gpstime[10] = "", date[11] = "", lat[15] = "", directionLat[2] = "", lon[15] = "", directionLng[2] = "", speed[10] = "", altitude[10] = "", hdop[10] = "", satellites[10] = "";
-// char gpstimeLast[10] = "", dateLast[11] = "", latLast[15] = "", lonLast[15] = "", speedLast[10] = "", altitudeLast[10] = "", hdopLast[10] = "", satellitesLast[10] = "", loggingLast[100] = "", firstlineLast[100] = "";
-// char logging[LOGGING_BUFFER_SIZE] = "";
-// char gpsData[130] = "";
-// double distanceLast = 0.0, latDifference = 0.0, lonDifference = 0.0; 
-
 const bool TEST = false; // Definition der Konstante TEST
 unsigned long lastPositionTime = 0;
 unsigned long currentTime = 0;
-static const unsigned long switchTime = 250; // Wartezeit von mindestens 0,25 Sekunde
-// // Globale Variable für die SPI-Einstellungen
-// SPISettings spiSettings(10000000, MSBFIRST, SPI_MODE0);
-
-// static const size_t SMALL_BUFFER_SIZE = 15;
-// static const size_t TINY_BUFFER_SIZE = 10;
-
-// char getDirectionOfLat(double lat);
-// char getDirectionOfLng(double lng);
-// bool initSDCard();
-
-// GPS Status Struktur
-// struct GPSState {
-//     char gpstime[TINY_BUFFER_SIZE];
-//     char date[TINY_BUFFER_SIZE];
-//     char lat[SMALL_BUFFER_SIZE];
-//     char lon[SMALL_BUFFER_SIZE];
-//     char speed[TINY_BUFFER_SIZE];
-//     char altitude[TINY_BUFFER_SIZE];
-//     char hdop[TINY_BUFFER_SIZE];
-//     char satellites[TINY_BUFFER_SIZE];
 
 double lastLat = 0.0;
 double lastLon = 0.0;   
-// double distance = 0.0;
-// } gpsState = {0};
 
 // The TinyGPS++ object
 TinyGPSPlus gps;
@@ -132,112 +117,6 @@ void serialTestOutput() {
     Serial.print(gps.time.second());
     Serial.println();
 }
-// // Funktion zum sicheren Konvertieren von String nach Double
-// double safeStrtod(const char* str, double defaultValue) {
-//     if (str == nullptr || *str == '\0') {
-//         Serial.println("Konvertierungsfehler: Eingabestring ist leer oder Null");
-//         return defaultValue;
-//     }
-//     char* endPtr;
-//     double result = strtod(str, &endPtr);
-//     if (*endPtr != '\0' && *endPtr != '.' && *endPtr != ',') {
-//         Serial.print("Konvertierungsfehler: Ungültige Eingabe: ");
-//         Serial.println(str);
-//         return defaultValue;
-//     }
-//     return result;
-// }
-
-// void processPosition() {
-//     // Statische Puffer statt dynamischer Speicherzuweisung
-//     static char lat[16];
-//     static char lon[16];
-//     static char directionLat[3];
-//     static char directionLng[3];
-//     static char gpstime[11];
-//     static char date[12];
-//     static char hdop[11];
-//     static char satellites[11];
-//     static char speed[11];
-//     static char altitude[11];
-//     static char logging[LOGGING_BUFFER_SIZE]; // Nochmals erhöhte Puffergröße
-
-//     // GPS-Daten formatieren
-//     snprintf(lat, sizeof(lat), "%.6f", gps.location.lat());
-//     snprintf(lon, sizeof(lon), "%.6f", gps.location.lng());
-
-//     // Himmelsrichtung bestimmen
-//     char directionLatChar = getDirectionOfLat(gps.location.lat());
-//     char directionLngChar = getDirectionOfLng(gps.location.lng());
-//     snprintf(directionLat, sizeof(directionLat), "%c", directionLatChar);
-//     snprintf(directionLng, sizeof(directionLng), "%c", directionLngChar);
-
-//     // Zeit und Datum
-//     snprintf(gpstime, sizeof(gpstime), "%02d:%02d:%02d",
-//         gps.time.hour(), gps.time.minute(), gps.time.second());
-//     snprintf(date, sizeof(date), "%04d-%02d-%02d",
-//         gps.date.year(), gps.date.month(), gps.date.day());
-
-//     // GPS-Daten
-//     snprintf(hdop, sizeof(hdop), "%.1f", gps.hdop.hdop());
-//     snprintf(satellites, sizeof(satellites), "%d", gps.satellites.value());
-//     snprintf(speed, sizeof(speed), "%.1f", gps.speed.knots());
-//     snprintf(altitude, sizeof(altitude), "%.1f", gps.altitude.meters());
-
-//     // Logging-String zusammenbauen
-//     int snprintfResult = snprintf(logging, sizeof(logging), "%s;%s;%s;%s;%s;%s;%s;%s;%s;%s",
-//         date, gpstime, lat, directionLat, lon, directionLng,
-//         speed, altitude, hdop, satellites);
-
-//     if (snprintfResult >= sizeof(logging)) {
-//         Serial.println("FEHLER: Logging-Puffer ist zu klein!");
-//         return;
-//     }
-
-//     // Distanzberechnungen
-//     Serial.println("processPosition: Vor safeStrtod()"); // Debug-Ausgabe
-//     double currentLat = safeStrtod(lat, 0.0);
-//     double currentLon = safeStrtod(lon, 0.0);
-//     double lastLat = safeStrtod(latLast, 0.0);
-//     double lastLon = safeStrtod(lonLast, 0.0);
-//     Serial.println("processPosition: Nach safeStrtod()"); // Debug-Ausgabe
-
-//     latDifference = calculateDifference(currentLat, lastLat);
-//     lonDifference = calculateDifference(currentLon, lastLon);
-//     positionDifference = calculateDistance(currentLat, currentLon, lastLat, lastLon);
-
-    
-//     // Differenzen anhängen
-//     snprintfResult = snprintf(logging + strlen(logging), sizeof(logging) - strlen(logging),
-//         ";%.6f;%.6f;%.6f", latDifference, lonDifference, positionDifference);
-
-//     if (snprintfResult >= sizeof(logging) - strlen(logging)) {
-//         Serial.println("FEHLER: Logging-Puffer ist zu klein (Differenzen)!");
-//         return;
-//     }
-    
-//     // Debug-Ausgaben hinzufügen
-//     Serial.printf("gpstimeLast: %s\n", gpstimeLast);
-//     Serial.printf("dateLast: %s\n", dateLast);
-//     Serial.printf("latLast: %s\n", latLast);
-//     Serial.printf("lonLast: %s\n", lonLast);
-//     Serial.printf("speedLast: %s\n", speedLast);
-//     Serial.printf("altitudeLast: %s\n", altitudeLast);
-//     Serial.printf("hdopLast: %s\n", hdopLast);
-//     Serial.printf("satellitesLast: %s\n", satellitesLast);
-
-//     // Aktuelle Position als letzte Position speichern
-//     snprintf(gpstimeLast, sizeof(gpstimeLast), "%s", gpstime);
-//     snprintf(dateLast, sizeof(dateLast), "%s", date);
-//     snprintf(latLast, sizeof(latLast), "%s", lat);
-//     snprintf(lonLast, sizeof(lonLast), "%s", lon);
-//     snprintf(speedLast, sizeof(speedLast), "%s", speed);
-//     snprintf(altitudeLast, sizeof(altitudeLast), "%s", altitude);
-//     snprintf(hdopLast, sizeof(hdopLast), "%s", hdop);
-//     snprintf(satellitesLast, sizeof(satellitesLast), "%s", satellites);
-
-//     // Serial.println("processPosition() finished");
-// }
 
 void sendStatus(int status) {
     loadFDRS(status, STATUS_T); // Status 0 = OK, 99 = waiting for GNSS data
@@ -317,17 +196,17 @@ void loop() {
 
     if ((TEST) && (gps.location.isValid())) {
         serialTestOutput();
+        statusSensor = 0;
     } else if (TEST) {
+        statusSensor = 99;
         Serial.print(statusSensor);
         Serial.println(" Keine gültigen GPS-Daten");
     }
 
-    if ((currentTime - lastPositionTime >= SWITCHTIME) && (statusSensor == 0)) { // Wartezeit von mindestens 0,25 Sekunde
+    if ((currentTime - lastPositionTime >= SWITCHTIME) && (statusSensor == 0)) { // Wartezeit von mindestens SWITCHTIME
         lastPositionTime = currentTime;
+        // Überprüfung ob die Position aktualisiert wurde und der HDOP-Wert unter dem Schwellenwert liegt
         if ((gps.location.isValid()) && (gps.hdop.hdop() < 3.0) && (gps.date.year()) != 2000 && (gps.date.month()) != 0 && (gps.date.day()) != 0 && (gps.time.hour()) != 0 && (gps.time.minute()) != 0 && (gps.time.second()) != 0) {
-            // Überprüfung ob die Position aktualisiert wurde und der HDOP-Wert unter dem Schwellenwert liegt
-            // Aufrufen der Funktion zur Verarbeitung und Speicherung der Positionsdaten
-            // processPosition();
             sendGnss(); // Sendet die GNSS-Daten an den FDRS-Gateway 
             setLed(true, GREEN_LED_PIN);
             delay(150);
@@ -339,5 +218,4 @@ void loop() {
         delay(150);
         setLed(false, RED_LED_PIN);
     }
-
 }
