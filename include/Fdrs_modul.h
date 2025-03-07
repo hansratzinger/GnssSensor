@@ -7,9 +7,9 @@
 //  HR   
 #ifndef FDRS_MODUL_H
 #define FDRS_MODUL_H
-#include <Arduino.h>
-#include "fdrs_node_config.h"
-#include <fdrs_node.h>
+// #include <Arduino.h>
+// #include "fdrs_node_config.h"
+// #include <fdrs_node.h>
 
 #define IR_SENSOR_PIN 15    // GPIO15: Infrarotsensor Pin
 #define LED_PIN 2           // GPIO2: Kontroll-LED Pin

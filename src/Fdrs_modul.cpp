@@ -4,10 +4,12 @@
 //
 //  Developed by Timm Bogner (timmbogner@gmail.com) in Urbana, Illinois, USA.
 //  An example of how to send data via ESP-NOW using FDRS.
-//  HR   
+//  HR 2025-03-07 10:12 NK   
+
 #include <Arduino.h>
 #include "fdrs_node_config.h"
 #include <fdrs_node.h>
+
 // FDRS Data Types
 #define IT_T            20 // RPM
 #define LATITUDE_T      21 // GPS Latitude

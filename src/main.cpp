@@ -4,8 +4,6 @@
 #include "SD.h"
 #include <SPI.h>
 #include <FS.h>
-#include <esp_now.h> // ESP-NOW Bibliothek
-#include <WiFi.h>    // WiFi Bibliothek
 #include <TinyGPSPlus.h>
 #include "DEV_Config.h"
 #include "L76X.h"
