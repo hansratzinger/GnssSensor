@@ -5,10 +5,16 @@
 //  Developed by Timm Bogner (timmbogner@gmail.com) in Urbana, Illinois, USA.
 //  An example of how to send data via ESP-NOW using FDRS.
 //  HR   
+#ifndef FDRS_MODUL_H
+#define FDRS_MODUL_H
 #include <Arduino.h>
 #include "fdrs_node_config.h"
 #include <fdrs_node.h>
 
+#define IR_SENSOR_PIN 15    // GPIO15: Infrarotsensor Pin
+#define LED_PIN 2           // GPIO2: Kontroll-LED Pin
+
+// FDRS Data Types
 #define LATITUDE_T      21 // GPS Latitude
 #define LONGITUDE_T     22 // GPS Longitude
 #define ALTITUDE_T      23 // GPS Altitude
@@ -17,21 +23,8 @@
 float data1;
 float data2;
 
-void RpmSensorFDRS(float data1) {   // Sendet die RPM-Werte an den FDRS-Gateway 
-  loadFDRS(data1, IT_T);
-  // DBG(sendFDRS()); // Debugging 
-  if (sendFDRS()) {
-    DBG("Big Success!");
-  } else {
-    DBG("Nope, not so much.");
-  }
-}
+void GnssFDRS(float lat, float lon, float alt, float hdop);  // Sendet die RPM-Werte an den FDRS-Gateway
 
-void setup1() {
-  beginFDRS();
-}
+void setupFDRS(); // Initialisiert FDRS
 
-
-
-
-
+#endif// FDRS_MODUL_H

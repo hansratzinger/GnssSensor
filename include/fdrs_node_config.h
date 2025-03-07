@@ -1,6 +1,8 @@
 //  FARM DATA RELAY SYSTEM
 //
 //  Sensor Configuration
+#ifndef FDRS_NODE_CONFIG_H
+#define FDRS_NODE_CONFIG_H
 
 #include <fdrs_globals.h>
 
@@ -46,3 +48,5 @@
 #define STD_OFFSET      (-6)                // Local standard time offset in hours from UTC - if unsure, check https://time.is
 #define DST_OFFSET      (STD_OFFSET + 1)    // Local savings time offset in hours from UTC - if unsure, check https://time.is
 #define TIME_PRINTTIME    15     // Time, in minutes, between printing local time to debug
+
+#endif // FDRS_NODE_CONFIG_H
