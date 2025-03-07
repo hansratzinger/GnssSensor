@@ -20,7 +20,7 @@
 #define UV_T            26 // speed
 #define PM1_T           27 // date
 #define PM2_5_T         28 // positionDifference
-#define PM10_T          29 
+#define PM10_T          29 // heading
 #define POWER_T         30 // directionLat
 #define POWER2_T        31 // directionLng
 #define ENERGY_T        32 
