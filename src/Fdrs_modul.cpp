@@ -37,7 +37,7 @@
 #endif //FDRS_DATA_TYPES
 
 
-void GnssFDRS(float lat, float lon, float alt, float hdop) {   // Sendet die RPM-Werte an den FDRS-Gateway 
+void sendGnss(float lat, float lon, float alt, float hdop) {   // Sendet die RPM-Werte an den FDRS-Gateway 
   loadFDRS(lat, LATITUDE_T);
   loadFDRS(lon, LONGITUDE_T);
   loadFDRS(alt, ALTITUDE_T);
@@ -53,6 +53,11 @@ void GnssFDRS(float lat, float lon, float alt, float hdop) {   // Sendet die RPM
 
 void setupFDRS() {
   beginFDRS();
+}
+
+void sendStatus(int status) {
+  loadFDRS(status, STATUS_T); // Status 0 = OK, 99 = waiting for GNSS data
+  sendFDRS();
 }
 
 

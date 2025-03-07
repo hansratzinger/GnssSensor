@@ -27,4 +27,6 @@ void GnssFDRS(float lat, float lon, float alt, float hdop);  // Sendet die RPM-W
 
 void setupFDRS(); // Initialisiert FDRS
 
+void sendStatus(int status); // Sendet einen Fehler an den FDRS-Gateway
+
 #endif// FDRS_MODUL_H

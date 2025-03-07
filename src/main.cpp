@@ -15,6 +15,9 @@
 #define ESPNOW_SEND_TIMEOUT 200 // Timeout in Millisekunden
 #define DEBUG_SD 1  // Debug-Ausgaben aktivieren
 
+// Globale Statusvariable
+int statusSensor = 99; // 99 = Initialisierung läuft, 0 = OK, andere Werte für Fehler
+
 // const String BRANCH = "dev"; // Branch name
 // const String RELEASE = "2.4.0"; // Branch name
 
@@ -80,9 +83,7 @@ bool initGPS() {
     Serial.println("Initializing GPS Serial...");
     gpsSerial.begin(GPS_BAUD, SERIAL_8N1, GPS_RX, GPS_TX);
 
-    // Erweiterte Initialisierungsversuche
-    int gpsRetries = 25;
-    while (gpsRetries > 0) {
+    while (true) { // Endlosschleife
         if (gpsSerial) {
             // Puffer leeren
             while (gpsSerial.available()) {
@@ -96,19 +97,19 @@ bool initGPS() {
                     char c = gpsSerial.read();
                     if (gps.encode(c) && gps.location.isValid()) {
                         Serial.println("GPS data stream verified");
-                        return true;
+                        statusSensor = 0; // GPS Initialisierung erfolgreich
+                        return true; // Erfolgreiche Initialisierung
                     }
                 }
                 delay(10);
             }
         }
 
-        Serial.printf("Waiting for GPS Serial, attempt %d of 5...\n", 6 - gpsRetries);
+        Serial.println("Waiting for GPS Serial, retrying...");
         delay(1000);
-        gpsRetries--;
     }
 
-    return false;
+    return false; // Wird eigentlich nie erreicht, da die Schleife endlos ist
 }
 
 // Funktion zum Öffnen der SD-Karten-Datei
@@ -304,13 +305,9 @@ void setup() {
  
     // GPS initialisieren
     Serial.println("Initializing GPS...");
-    bool gpsInitialized = initGPS();
-    if (!gpsInitialized) {
-        Serial.println("GPS-Initialisierung fehlgeschlagen. Das Programm wird ohne GPS-Funktionalität fortgesetzt.");
-    } else {
-        Serial.println("GPS erfolgreich initialisiert");
-        delay(100);
-    }
+    initGPS(); // Die Funktion blockiert, bis die Initialisierung erfolgreich ist
+    Serial.println("GPS erfolgreich initialisiert");
+    delay(100);
 
     setupFDRS(); // Initialisiert FDRS 
 
@@ -351,9 +348,12 @@ void loop() {
         Serial.print(F(":"));
         Serial.print(gps.time.second());
         Serial.println();
+    } else if (TEST) {
+        Serial.print(statusSensor);
+        Serial.println(" Keine gültigen GPS-Daten");
     }
 
-    if (currentTime - lastPositionTime >= switchTime) { // Wartezeit von mindestens 0,25 Sekunde
+    if ((currentTime - lastPositionTime >= switchTime) && (statusSensor == 0)) { // Wartezeit von mindestens 0,25 Sekunde
         lastPositionTime = currentTime;
         if ((gps.location.isValid()) && (gps.hdop.hdop() < 3.0) && (gps.date.year()) != 2000 && (gps.date.month()) != 0 && (gps.date.day()) != 0 && (gps.time.hour()) != 0 && (gps.time.minute()) != 0 && (gps.time.second()) != 0) {
             // Überprüfung ob die Position aktualisiert wurde und der HDOP-Wert unter dem Schwellenwert liegt
@@ -364,5 +364,11 @@ void loop() {
             delay(150);
             setLed(false, GREEN_LED_PIN, TEST);
         }
+    } else if (statusSensor != 0) {
+        sendStatus(statusSensor); // Sendet einen Fehler an den FDRS-Gateway
+        setLed(true, RED_LED_PIN, TEST);
+        delay(150);
+        setLed(false, RED_LED_PIN, TEST);
     }
+
 }
