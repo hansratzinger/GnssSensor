@@ -15,7 +15,7 @@
 // -  uses the SPI.h file to define the SPI functions.
 // -  uses the Arduino.h file to define the Arduino functions.
 
-// Release 1.0.0
+// Release 1.1.1
 // HR 2025-03-07 NK Initial version
 
 #include <Arduino.h>
@@ -34,13 +34,14 @@
 float statusSensor = 99; // FDRS data 99 = Initialisierung läuft, 0 = OK, andere Werte für Fehler
 
 // const String BRANCH = "main"; // Branch name
-// const String RELEASE = "1.1.0"; // Branch name
+// const String RELEASE = "1.1.1"; // Branch name
 
 // Deklaration von Variablen
 const bool TEST = false; // Definition der Konstante TEST
 unsigned long lastPositionTime = 0;
 unsigned long currentTime = 0;
-float switchTime = 5000; // Wartezeit von mindestens 5 Sekunden, wird durch calculateInterval() später geschwindigkeitsabhängig verändert!
+int switchTime = 5000; // Wartezeit von mindestens 5 Sekunden, wird durch calculateInterval() später geschwindigkeitsabhängig verändert!
+int initSwitchTime = 500; // Wartezeit beim GPNSS Init von mindestens 500 milliSekunden
 
 double lastLat = 0.0;
 double lastLon = 0.0;   
@@ -70,7 +71,7 @@ bool initGPS() {
             }
             // Warte auf erste gültige NMEA-Daten
             unsigned long startTime = millis();
-            while (millis() - startTime < 2000) {  // 2 Sekunden Timeout
+            while (millis() - startTime < initSwitchTime) {  // 2 Sekunden Timeout
                 if (gpsSerial.available()) {
                     char c = gpsSerial.read();
                     if (gps.encode(c) && gps.location.isValid()) {
@@ -128,6 +129,7 @@ int calculateInterval(float speed) {
     int intInterval = (round)(interval * 1000); // convert to milliseconds
     return intInterval;
 }
+
 void sendGnss() {   // Sendet die RPM-Werte an den FDRS-Gateway   
     // FDRS data types  
 
@@ -205,28 +207,25 @@ void loop() {
         gps.encode(gpsSerial.read());
     }
 
-    if ((TEST) && (gps.location.isValid())) {
-        serialTestOutput();
-        statusSensor = 0;
-    } else if (TEST) {
-        statusSensor = 99;
-        Serial.print(statusSensor);
-        Serial.println(" Keine gültigen GPS-Daten");
-    }
-
-    if ((currentTime - lastPositionTime >= switchTime) && (statusSensor == 0)) { // Wartezeit von mindestens SWITCHTIME
+    if (currentTime - lastPositionTime >= switchTime) { // Wartezeit von mindestens SWITCHTIME
         lastPositionTime = currentTime;
         // Überprüfung ob die Position aktualisiert wurde und der HDOP-Wert unter dem Schwellenwert liegt
         if ((gps.location.isValid()) && (gps.hdop.hdop() < 3.0) && (gps.date.year()) != 2000 && (gps.date.month()) != 0 && (gps.date.day()) != 0 && (gps.time.hour()) != 0 && (gps.time.minute()) != 0 && (gps.time.second()) != 0) {
+            statusSensor = 0;
             sendGnss(); // Sendet die GNSS-Daten an den FDRS-Gateway 
+            setLed(false, RED_LED_PIN);
             setLed(true, GREEN_LED_PIN);
             delay(150);
             setLed(false, GREEN_LED_PIN);
+            if (TEST) {
+                serialTestOutput();
+            }
         }
-    } else if (statusSensor != 0) {
+    } 
+    
+    if (!gps.location.isValid())  {
+        statusSensor = 99; // no valid GPS data
         sendStatus(statusSensor); // Sendet einen Fehler an den FDRS-Gateway
         setLed(true, RED_LED_PIN);
-        delay(150);
-        setLed(false, RED_LED_PIN);
     }
 }
