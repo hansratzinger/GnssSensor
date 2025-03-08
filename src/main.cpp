@@ -34,7 +34,7 @@
 float statusSensor = 99; // FDRS data 99 = Initialisierung läuft, 0 = OK, andere Werte für Fehler
 
 // const String BRANCH = "main"; // Branch name
-// const String RELEASE = "1.0.0"; // Branch name
+// const String RELEASE = "1.1.0"; // Branch name
 
 // Deklaration von Variablen
 const bool TEST = false; // Definition der Konstante TEST
