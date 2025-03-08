@@ -29,7 +29,6 @@
 
 #define GPS_BAUD 115200
 #define SERIALMONITOR_BAUD 115200
-#define SWITCHTIME 1000 // Wartezeit von mindestens 1 Sekunde!
 
 // Globale Statusvariable
 float statusSensor = 99; // FDRS data 99 = Initialisierung läuft, 0 = OK, andere Werte für Fehler
@@ -41,6 +40,7 @@ float statusSensor = 99; // FDRS data 99 = Initialisierung läuft, 0 = OK, ander
 const bool TEST = false; // Definition der Konstante TEST
 unsigned long lastPositionTime = 0;
 unsigned long currentTime = 0;
+float switchTime = 5000; // Wartezeit von mindestens 5 Sekunden, wird durch calculateInterval() später geschwindigkeitsabhängig verändert!
 
 double lastLat = 0.0;
 double lastLon = 0.0;   
@@ -123,8 +123,14 @@ void sendStatus(int status) {
     sendFDRS();
 }
 
+int calculateInterval(float speed) {
+    float interval = 1 / (speed * 1000 / 3600); // intevall 1 meter in relation to speed   
+    int intInterval = (round)(interval * 1000); // convert to milliseconds
+    return intInterval;
+}
 void sendGnss() {   // Sendet die RPM-Werte an den FDRS-Gateway   
     // FDRS data types  
+
     float fdrsALT = (float)gps.altitude.meters(); // GPS Altitude
     float fdrsHDOP = (float)gps.hdop.hdop(); // GPS HDOP
     float fdrsSATS = (float)gps.satellites.value(); // satellites   
@@ -133,7 +139,8 @@ void sendGnss() {   // Sendet die RPM-Werte an den FDRS-Gateway
     float fdrsLATDIR = (fdrsLAT >= 0) ? 1 : 0; // 1 für Nord, 0 für Süd
     float fdrsLONDIR = (fdrsLON >= 0) ? 1 : 0; // 1 für Ost, 0 für West
     float fdrsHEADING = (float)gps.course.deg(); // heading
-    float fdrsDISTANCE_TO_LAST_POSITION = (float)calculateDistance(gps.location.lat(), gps.location.lng(), lastLat, lastLon); // positionDifference
+    float fdrsSPEED = (float)gps.speed.kmph(); // SPEED KMH
+    float fdrsPOSITION_DIFF  = (float)calculateDistance(gps.location.lat(), gps.location.lng(), lastLat, lastLon); // positionDifference
     float fdrsYEAR = (float)gps.date.year(); // year
     float fdrsMONTH = (float)gps.date.month(); // month
     float fdrsDAY = (float)gps.date.day(); // day
@@ -141,25 +148,29 @@ void sendGnss() {   // Sendet die RPM-Werte an den FDRS-Gateway
     float fdrsMINUTE = (float)gps.time.minute(); // minute
     float fdrsSECOND = (float)gps.time.second(); // second 
 
+    loadFDRS(fdrsSPEED, SPEED);
     loadFDRS(fdrsLAT, LATITUDE_T);
     loadFDRS(fdrsLON, LONGITUDE_T);
     loadFDRS(fdrsALT, ALTITUDE_T);
     loadFDRS(fdrsHDOP, HDOP_T);
-    loadFDRS(fdrsSATS, LEVEL_T);
-    loadFDRS(fdrsLATDIR, CURRENT_T);
-    loadFDRS(fdrsLONDIR, UV_T);
-    loadFDRS(fdrsHEADING, PM1_T);
-    loadFDRS(fdrsDISTANCE_TO_LAST_POSITION, PM2_5_T);
-    loadFDRS(fdrsYEAR, PM10_T);
-    loadFDRS(fdrsMONTH, POWER_T);
-    loadFDRS(fdrsDAY, POWER2_T);
-    loadFDRS(fdrsHOUR, ENERGY_T);
-    loadFDRS(fdrsMINUTE, ENERGY2_T);
-    loadFDRS(fdrsSECOND, WEIGHT_T);
+    loadFDRS(fdrsSATS, SATELLITES);
+    loadFDRS(fdrsLATDIR, DIRECTION_LAT);
+    loadFDRS(fdrsLONDIR, DIRECTION_LON);
+    loadFDRS(fdrsHEADING, HEADING);
+    loadFDRS(fdrsPOSITION_DIFF , POSITION_DIFF);
+    loadFDRS(fdrsYEAR, YEAR);
+    loadFDRS(fdrsMONTH, MONTH);
+    loadFDRS(fdrsDAY, DAY);
+    loadFDRS(fdrsHOUR, HOUR);
+    loadFDRS(fdrsMINUTE, MINUTE);
+    loadFDRS(fdrsSECOND, SECOND);
 
     // Speichern der aktuellen Position
     lastLat = gps.location.lat();
     lastLon = gps.location.lng();
+
+    // calculate interval
+    switchTime = calculateInterval(fdrsSPEED);
       
     // DBG(sendFDRS()); // Debugging 
     if (sendFDRS()) {
@@ -203,7 +214,7 @@ void loop() {
         Serial.println(" Keine gültigen GPS-Daten");
     }
 
-    if ((currentTime - lastPositionTime >= SWITCHTIME) && (statusSensor == 0)) { // Wartezeit von mindestens SWITCHTIME
+    if ((currentTime - lastPositionTime >= switchTime) && (statusSensor == 0)) { // Wartezeit von mindestens SWITCHTIME
         lastPositionTime = currentTime;
         // Überprüfung ob die Position aktualisiert wurde und der HDOP-Wert unter dem Schwellenwert liegt
         if ((gps.location.isValid()) && (gps.hdop.hdop() < 3.0) && (gps.date.year()) != 2000 && (gps.date.month()) != 0 && (gps.date.day()) != 0 && (gps.time.hour()) != 0 && (gps.time.minute()) != 0 && (gps.time.second()) != 0) {
