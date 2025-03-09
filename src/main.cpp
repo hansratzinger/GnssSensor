@@ -27,7 +27,7 @@
 #include "fdrs_node_config.h"
 #include <fdrs_node.h>
 
-#define GPS_BAUD 115200
+#define GPS_BAUD 9600
 #define SERIALMONITOR_BAUD 115200
 
 // Globale Statusvariable
