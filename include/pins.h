@@ -11,22 +11,13 @@
 #define GPS_TX      17    // ESP32 TX (Output) -> LC76 RX (Input)
 
 // Status LED 
-#define GREEN_LED_PIN  25    // Grüne LED an GPIO25 (output-fähig)
-#define RED_LED_PIN    26    // Rote LED an GPIO26 (output-fähig)
-
-#define SD_CHECK(x) do { \
-    int __err_rc = (x); \
-    if (__err_rc != ESP_OK) { \
-        Serial.printf("SD error: %d at %s:%d\n", __err_rc, __FILE__, __LINE__); \
-        return false; \
-    } \
-} while(0)
-
-#endif /* PINS_H */
+#define GREEN_LED  25    // Grüne LED an GPIO25 (output-fähig)
+#define RED_LED    26    // Rote LED an GPIO26 (output-fähig)
 
 // FDRS Data Types
 
 #define STATUS_T         0  // Status 0 = OK, 1 = Error
+#define LATITUDE        16  // RPM Packet Number
 #define SPEED           17  // Status 0 = OK, 1 = Error
 #define RPM             20 // RPM
 #define LATITUDE_T      21 // GPS Latitude
@@ -45,3 +36,5 @@
 #define HOUR            32 // hour
 #define MINUTE          33 // minute
 #define SECOND          34 // second
+
+#endif /* PINS_H */

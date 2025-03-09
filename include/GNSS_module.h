@@ -28,5 +28,7 @@ double calculateDifference(double firstData, double secondData);
 
 void sendGnnsData(); // Sendet die GNSS-Daten an den FDRS-Gateway
 
+
+
 #endif // GNSS_MODULE_H
 

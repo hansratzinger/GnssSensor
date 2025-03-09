@@ -5,23 +5,28 @@ Da die einzelnen Datentypen bei FDRS fix belegt sind, wird die Zuordnung intern 
 
 ## FDRS Data Types  
 
--  STATUS_T        0  // Status 0 = OK, 1 = Error
--  IT_T            20 // RPM
--  LATITUDE_T      21 // GPS Latitude
--  LONGITUDE_T     22 // GPS Longitude
--  ALTITUDE_T      23 // GPS Altitude
--  HDOP_T          24 // GPS HDOP
--  LEVEL_T         25 // satellites
--  UV_T            26 // direction lat 1/N 0/S
--  UV_T            26 // direction lon 1/E 0/W 
--  PM1_T           27 // heading
--  PM2_5_T         28 // positionDifference
--  PM10_T          29 // year
--  POWER_T         30 // month
--  POWER2_T        31 // day
--  ENERGY_T        32 // hour
--  ENERGY2_T       33 // minute
--  WEIGHT_T        34 // second
+// FDRS Data Types
+
+#define STATUS_T         0  // Status 0 = OK, 1 = Error
+#define LATITUDE        16  // RPM Packet Number
+#define SPEED           17  // Status 0 = OK, 1 = Error
+#define RPM             20 // RPM
+#define LATITUDE_T      21 // GPS Latitude
+#define LONGITUDE_T     22 // GPS Longitude
+#define ALTITUDE_T      23 // GPS Altitude
+#define HDOP_T          24 // GPS HDOP
+#define SATELLITES      25 // satellites
+#define DIRECTION_LAT   18 // direction lat 1/N 0/S 
+#define DIRECTION_LON   19 // direction lat 1/N 0/S 
+#define SPEED_KMH       26 // SPEED KMH
+#define HEADING         27 // heading
+#define POSITION_DIFF   28 // positionDifference
+#define YEAR            29 // year
+#define MONTH           30 // month
+#define DAY             31 // day
+#define HOUR            32 // hour
+#define MINUTE          33 // minute
+#define SECOND          34 // second
 
 # GNSSLogger - ACHTUNG nicht AKTUELL!!! HR 2025-03-07 NK
 

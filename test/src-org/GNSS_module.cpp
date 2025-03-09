@@ -97,3 +97,7 @@ char getDirectionOfLat(double latitude) {
     return (longitude >= 0) ? 'E' : 'W';
   }
 
+void sendGnnsData(){
+
+    
+}
