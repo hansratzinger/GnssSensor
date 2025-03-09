@@ -80,6 +80,7 @@ void serialTestOutput() {
     Serial.print(":");
     Serial.print(gps.time.second());
     Serial.println();
+}
 
 void sendGnss() {   // Sendet die RPM-Werte an den FDRS-Gateway   
     // FDRS data types  
