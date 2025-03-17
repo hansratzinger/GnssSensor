@@ -31,6 +31,14 @@
 #define SERIALMONITOR_BAUD 115200
 #define GPS_BAUD 115200
 
+#define YEAR        25
+#define MONTH       26
+#define DAY         27      
+#define HOUR        28
+#define MINUTE      29
+#define SECOND      30
+#define BOARDTIME   31
+
 // const String BRANCH = "main"; // Branch name
 // const String RELEASE = "1.2.0"; // Branch name
 
@@ -84,15 +92,15 @@ void serialTestOutput() {
 
 void sendGnss() {   // Sendet die RPM-Werte an den FDRS-Gateway   
     // FDRS data types  
-    float fdrsALT = (float)gps.altitude.meters(); // GPS Altitude
-    float fdrsHDOP = (float)gps.hdop.hdop(); // GPS HDOP
-    float fdrsSATS = (float)gps.satellites.value(); // satellites   
+    // float fdrsALT = (float)gps.altitude.meters(); // GPS Altitude
+    // float fdrsHDOP = (float)gps.hdop.hdop(); // GPS HDOP
+    // float fdrsSATS = (float)gps.satellites.value(); // satellites   
     float fdrsLAT = (float)gps.location.lat();
     float fdrsLON = (float)gps.location.lng(); // GPS Longitude
-    float fdrsLATDIR = (fdrsLAT >= 0) ? 1 : 0; // 1 für Nord, 0 für Süd
-    float fdrsLONDIR = (fdrsLON >= 0) ? 1 : 0; // 1 für Ost, 0 für West
-    float fdrsHEADING = (float)gps.course.deg(); // heading
-    float fdrsSPEED = (float)gps.speed.kmph(); // SPEED KMH
+    // float fdrsLATDIR = (fdrsLAT >= 0) ? 1 : 0; // 1 für Nord, 0 für Süd
+    // float fdrsLONDIR = (fdrsLON >= 0) ? 1 : 0; // 1 für Ost, 0 für West
+    // float fdrsHEADING = (float)gps.course.deg(); // heading
+    // float fdrsSPEED = (float)gps.speed.kmph(); // SPEED KMH
     float fdrsPOSITION_DIFF  = (float)calculateDistance(gps.location.lat(), gps.location.lng(), lastLat, lastLon); // positionDifference
     float fdrsYEAR = (float)gps.date.year(); // year
     float fdrsMONTH = (float)gps.date.month(); // month
@@ -100,17 +108,20 @@ void sendGnss() {   // Sendet die RPM-Werte an den FDRS-Gateway
     float fdrsHOUR = (float)gps.time.hour(); // hour
     float fdrsMINUTE = (float)gps.time.minute(); // minute
     float fdrsSECOND = (float)gps.time.second(); // second 
+    float fdrsBOARD_TIME = (float)millis(); // second uptime for testing
+
+
 
     // Load FDRS data
-    loadFDRS(fdrsSPEED, SPEED);
+    // loadFDRS(fdrsSPEED, SPEED);
     loadFDRS(fdrsLAT, LATITUDE_T);
     loadFDRS(fdrsLON, LONGITUDE_T);
-    loadFDRS(fdrsALT, ALTITUDE_T);
-    loadFDRS(fdrsHDOP, HDOP_T);
-    loadFDRS(fdrsSATS, SATELLITES);
-    loadFDRS(fdrsLATDIR, DIRECTION_LAT);
-    loadFDRS(fdrsLONDIR, DIRECTION_LON);
-    loadFDRS(fdrsHEADING, HEADING);
+    // loadFDRS(fdrsALT, ALTITUDE_T);
+    // loadFDRS(fdrsHDOP, HDOP_T);
+    // loadFDRS(fdrsSATS, SATELLITES);
+    // loadFDRS(fdrsLATDIR, DIRECTION_LAT);
+    // loadFDRS(fdrsLONDIR, DIRECTION_LON);
+    // loadFDRS(fdrsHEADING, HEADING);
     loadFDRS(fdrsPOSITION_DIFF , POSITION_DIFF);
     loadFDRS(fdrsYEAR, YEAR);
     loadFDRS(fdrsMONTH, MONTH);
@@ -118,14 +129,15 @@ void sendGnss() {   // Sendet die RPM-Werte an den FDRS-Gateway
     loadFDRS(fdrsHOUR, HOUR);
     loadFDRS(fdrsMINUTE, MINUTE);
     loadFDRS(fdrsSECOND, SECOND);
+    loadFDRS(fdrsBOARD_TIME, BOARDTIME);
 
     // Speichern der aktuellen Position
     lastLat = gps.location.lat();
     lastLon = gps.location.lng();
 
     if (TEST) {
-        Serial.print(String(fdrsYEAR) + String(fdrsMONTH) + String(fdrsDAY) + String(fdrsHOUR) + String(fdrsMINUTE) + String(fdrsSECOND));
-        Serial.println(" " + String(fdrsLAT) + " " + String(fdrsLON) + " " + String(fdrsALT) + " " + String(fdrsHDOP) + " " + String(fdrsSATS) + " " + String(fdrsLATDIR) + " " + String(fdrsLONDIR) + " " + String(fdrsHEADING) + " " + String(fdrsSPEED) + " " + String(fdrsPOSITION_DIFF));
+        // Serial.print(String(fdrsYEAR) + String(fdrsMONTH) + String(fdrsDAY) + String(fdrsHOUR) + String(fdrsMINUTE) + String(fdrsSECOND));
+        // Serial.println(" " + String(fdrsLAT) + " " + String(fdrsLON) + " " + String(fdrsALT) + " " + String(fdrsHDOP) + " " + String(fdrsSATS) + " " + String(fdrsLATDIR) + " " + String(fdrsLONDIR) + " " + String(fdrsHEADING) + " " + String(fdrsSPEED) + " " + String(fdrsPOSITION_DIFF));
     }
       
     // DBG(sendFDRS()); // Debugging 
@@ -172,13 +184,14 @@ setLed(true, GREEN_LED);
 void loop() {
     currentTime = millis();
     static unsigned long lastPositionTime = 0;
-
+    
     while (gpsSerial.available() > 0) {
         char c = gpsSerial.read();
         if (gps.encode(c)) {
             if (gps.location.isValid() && (currentTime - lastPositionTime >= 1000)) { // Prüfe, ob eine Sekunde vergangen ist
                 setLed(true, GREEN_LED);
-                Serial.print("Latitude: ");
+                Serial.print("Time: ");
+                Serial.println(millis());                Serial.print("Latitude: ");
                 Serial.println(gps.location.lat(), 6);
                 Serial.print("Longitude: ");
                 Serial.println(gps.location.lng(), 6);
