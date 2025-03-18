@@ -28,26 +28,15 @@
 #include "fdrs_node_config.h"
 #include <fdrs_node.h>
 
-#define SERIALMONITOR_BAUD 115200
-#define GPS_BAUD 115200
-
-#define YEAR        25
-#define MONTH       26
-#define DAY         27      
-#define HOUR        28
-#define MINUTE      29
-#define SECOND      30
-#define BOARDTIME   31
-
 // const String BRANCH = "main"; // Branch name
 // const String RELEASE = "1.2.0"; // Branch name
 
 // Deklaration von Variablen
+const int meterBetweenTwoPoints = 0; // Distanz zwischen zwei Punkten
 const bool TEST = true; // Definition der Konstante TEST
 unsigned long lastPositionTime = 0;
 unsigned long currentTime = 0;
-int switchTime = 5000; // Wartezeit von mindestens 5 Sekunden, wird durch calculateInterval() später geschwindigkeitsabhängig verändert!
-int initSwitchTime = 500; // Wartezeit beim GPNSS Init von mindestens 500 milliSekunden
+int switchTime = 0; // Wartezeit von mindestens 5 Sekunden, wird durch calculateInterval() später geschwindigkeitsabhängig verändert!
 
 double lastLat = 0.0;
 double lastLon = 0.0;   
@@ -62,6 +51,11 @@ HardwareSerial gpsSerial(1); // Initialisierung von gpsSerial
 void setLed(bool state, uint8_t pin) {
     pinMode(pin, OUTPUT);
     digitalWrite(pin, state);
+}
+
+int getSwitchTime(int meterBetweenTwoPoints) {
+    float speedMeterPerSecond = gps.speed.kmph() / 3.6;
+    return round((meterBetweenTwoPoints / speedMeterPerSecond)*1000);  // Umrechnung von Sekunden in Millisekunden
 }
 
 void serialTestOutput() {
@@ -90,7 +84,21 @@ void serialTestOutput() {
     Serial.println();
 }
 
+float createTimestamp() {
+    float year = (float)gps.time.year();
+    float month = (float)gps.time.month();
+    float day = (float)gps.time.day();
+    float hours = (float)gps.time.hour();
+    float minutes = (float)gps.time.minute();
+    float seconds = (float)gps.time.second();
+    return year*1000000000000 + month*100000000 + day*1000000 + hours*10000 + minutes*100 + seconds;
+}
+
 void sendGnss() {   // Sendet die RPM-Werte an den FDRS-Gateway   
+    if (!gps.location.isValid() || !gps.date.isValid() || !gps.time.isValid()) {
+        Serial.println("Invalid GPS data");
+        return;
+    }
     // FDRS data types  
     // float fdrsALT = (float)gps.altitude.meters(); // GPS Altitude
     // float fdrsHDOP = (float)gps.hdop.hdop(); // GPS HDOP
@@ -184,16 +192,18 @@ setLed(true, GREEN_LED);
 void loop() {
     currentTime = millis();
     static unsigned long lastPositionTime = 0;
-    
+        
     while (gpsSerial.available() > 0) {
         char c = gpsSerial.read();
         if (gps.encode(c)) {
-            if (gps.location.isValid() && (currentTime - lastPositionTime >= 1000)) { // Prüfe, ob eine Sekunde vergangen ist
+            if (gps.location.isValid() && (currentTime - lastPositionTime >= switchTime)) { // Prüfe, ob eine Sekunde vergangen ist
                 setLed(true, GREEN_LED);
+                createTimestamp();
                 Serial.print("Time: ");
-                Serial.println(millis());                Serial.print("Latitude: ");
-                Serial.println(gps.location.lat(), 6);
-                Serial.print("Longitude: ");
+                Serial.print(millis());    
+                Serial.print("Lat: ");
+                Serial.print(gps.location.lat(), 6);
+                Serial.print("  Lon: ");
                 Serial.println(gps.location.lng(), 6);
                 lastPositionTime = currentTime; // Aktualisiere die letzte Ausgabezeit
                 sendGnss(); // Sendet die GNSS-Daten an den FDRS-Gateway (jetzt innerhalb der Zeitschleife)
