@@ -20,7 +20,11 @@
 // -  sendGnss when FDRS signal is not confirmed by gateway RED LED is on
 // -  the DATA TYPES have been altered compared to the original code
 // -  the code has been simplified
-
+// Release 1.2.2 HR 2025-03-18 NK
+// -  added the function createTimestamp() to create a timestamp using gps.time
+// -  added the function createDatestamp() to create a datestamp using gps.date
+// -  changed the timing of the GNSS data transmission related to the timestamp
+// -----------------------------------------------------------------------------
 #include <Arduino.h>
 #include <pins.h>
 #include "GNSS_module.h"
@@ -28,16 +32,11 @@
 #include "fdrs_node_config.h"
 #include <fdrs_node.h>
 
-// const String BRANCH = "main"; // Branch name
-// const String RELEASE = "1.2.0"; // Branch name
-
 // Deklaration von Variablen
 const int meterBetweenTwoPoints = 0; // Distanz zwischen zwei Punkten
 const bool TEST = true; // Definition der Konstante TEST
 int lastPositionTime = 0;
 
-// unsigned long currentTime = 0;
-// int switchTime = 0; // Wartezeit von mindestens 5 Sekunden, wird durch calculateInterval() später geschwindigkeitsabhängig verändert!
 int dateStamp = 0;
 int timeStamp = 0;
 double lastLat = 0.0;
@@ -162,7 +161,6 @@ void setup() {
     Serial.println("=====================================");
     Serial.println("======= G N S S - S E N S O R =======");
     Serial.println("=====================================");
-
         
     gpsSerial.begin(GPS_BAUD, SERIAL_8N1, GPS_RX, GPS_TX);
     delay(1000);
@@ -176,19 +174,15 @@ void setup() {
     delay(1000);
 
     Serial.print("GPS_RX: ");
-Serial.println(GPS_RX);
-Serial.print("GPS_TX: ");
-Serial.println(GPS_TX);
+    Serial.println(GPS_RX);
+    Serial.print("GPS_TX: ");
+    Serial.println(GPS_TX);
 
-setLed(false, RED_LED);
-setLed(true, GREEN_LED);
+    setLed(false, RED_LED);
+    setLed(true, GREEN_LED);
 }
 
-
 void loop() {
-    // currentTime = millis();
-    // static unsigned long lastPositionTime = 0;
-        
     while (gpsSerial.available() > 0) {
         char c = gpsSerial.read();
         if (gps.encode(c)) {
