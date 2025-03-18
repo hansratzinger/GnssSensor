@@ -15,26 +15,24 @@
 #define RED_LED    26    // Rote LED an GPIO26 (output-fähig)
 
 // FDRS Data Types
-
 #define STATUS_T         0  // Status 0 = OK, 1 = Error
-#define LATITUDE        16  // RPM Packet Number
-#define SPEED           17  // Status 0 = OK, 1 = Error
+#define DATE            01
+#define TIME            02
+#define BOARDTIME       07 // millis() from start of the board
+#define RPM_PACKAGE_NR  16  // RPM Packet Number
+#define DIRECTION_LAT   18 // direction lat 1/N 0/S 
+#define DIRECTION_LON   19 // direction lat 1/N 0/S 
 #define RPM             20 // RPM
 #define LATITUDE_T      21 // GPS Latitude
 #define LONGITUDE_T     22 // GPS Longitude
 #define ALTITUDE_T      23 // GPS Altitude
 #define HDOP_T          24 // GPS HDOP
 #define SATELLITES      25 // satellites
-#define DIRECTION_LAT   18 // direction lat 1/N 0/S 
-#define DIRECTION_LON   19 // direction lat 1/N 0/S 
 #define SPEED_KMH       26 // SPEED KMH
 #define HEADING         27 // heading
 #define POSITION_DIFF   28 // positionDifference
-#define YEAR            29 // year
-#define MONTH           30 // month
-#define DAY             31 // day
-#define HOUR            32 // hour
-#define MINUTE          33 // minute
-#define SECOND          34 // second
+
+#define SERIALMONITOR_BAUD 115200
+#define GPS_BAUD 115200
 
 #endif /* PINS_H */

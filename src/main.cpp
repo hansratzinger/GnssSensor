@@ -34,10 +34,12 @@
 // Deklaration von Variablen
 const int meterBetweenTwoPoints = 0; // Distanz zwischen zwei Punkten
 const bool TEST = true; // Definition der Konstante TEST
-unsigned long lastPositionTime = 0;
-unsigned long currentTime = 0;
-int switchTime = 0; // Wartezeit von mindestens 5 Sekunden, wird durch calculateInterval() später geschwindigkeitsabhängig verändert!
+int lastPositionTime = 0;
 
+// unsigned long currentTime = 0;
+// int switchTime = 0; // Wartezeit von mindestens 5 Sekunden, wird durch calculateInterval() später geschwindigkeitsabhängig verändert!
+int dateStamp = 0;
+int timeStamp = 0;
 double lastLat = 0.0;
 double lastLon = 0.0;   
 
@@ -84,14 +86,18 @@ void serialTestOutput() {
     Serial.println();
 }
 
-float createTimestamp() {
-    float year = (float)gps.time.year();
-    float month = (float)gps.time.month();
-    float day = (float)gps.time.day();
-    float hours = (float)gps.time.hour();
-    float minutes = (float)gps.time.minute();
-    float seconds = (float)gps.time.second();
-    return year*1000000000000 + month*100000000 + day*1000000 + hours*10000 + minutes*100 + seconds;
+int createTimestamp() {
+    int hours = (float)gps.time.hour();
+    int minutes = (float)gps.time.minute();
+    int seconds = (float)gps.time.second();
+    return hours*10000 + minutes*100 + seconds;
+}
+
+int createDatestamp() {
+    int year = (float)gps.date.year();
+    int month = (float)gps.date.month();
+    int day = (float)gps.date.day();
+    return year*10000 + month*100 + day ;
 }
 
 void sendGnss() {   // Sendet die RPM-Werte an den FDRS-Gateway   
@@ -110,15 +116,9 @@ void sendGnss() {   // Sendet die RPM-Werte an den FDRS-Gateway
     // float fdrsHEADING = (float)gps.course.deg(); // heading
     // float fdrsSPEED = (float)gps.speed.kmph(); // SPEED KMH
     float fdrsPOSITION_DIFF  = (float)calculateDistance(gps.location.lat(), gps.location.lng(), lastLat, lastLon); // positionDifference
-    float fdrsYEAR = (float)gps.date.year(); // year
-    float fdrsMONTH = (float)gps.date.month(); // month
-    float fdrsDAY = (float)gps.date.day(); // day
-    float fdrsHOUR = (float)gps.time.hour(); // hour
-    float fdrsMINUTE = (float)gps.time.minute(); // minute
-    float fdrsSECOND = (float)gps.time.second(); // second 
-    float fdrsBOARD_TIME = (float)millis(); // second uptime for testing
-
-
+    float fdrsDATE = (float)dateStamp; // date
+    float fdrsTIME = (float)timeStamp; // time
+    // float fdrsBOARD_TIME = (float)millis(); // second uptime for testing
 
     // Load FDRS data
     // loadFDRS(fdrsSPEED, SPEED);
@@ -131,13 +131,9 @@ void sendGnss() {   // Sendet die RPM-Werte an den FDRS-Gateway
     // loadFDRS(fdrsLONDIR, DIRECTION_LON);
     // loadFDRS(fdrsHEADING, HEADING);
     loadFDRS(fdrsPOSITION_DIFF , POSITION_DIFF);
-    loadFDRS(fdrsYEAR, YEAR);
-    loadFDRS(fdrsMONTH, MONTH);
-    loadFDRS(fdrsDAY, DAY);
-    loadFDRS(fdrsHOUR, HOUR);
-    loadFDRS(fdrsMINUTE, MINUTE);
-    loadFDRS(fdrsSECOND, SECOND);
-    loadFDRS(fdrsBOARD_TIME, BOARDTIME);
+    loadFDRS(fdrsDATE, DATE);
+    loadFDRS(fdrsTIME, TIME);
+    // loadFDRS(fdrsBOARD_TIME, BOARDTIME);
 
     // Speichern der aktuellen Position
     lastLat = gps.location.lat();
@@ -190,27 +186,33 @@ setLed(true, GREEN_LED);
 
 
 void loop() {
-    currentTime = millis();
-    static unsigned long lastPositionTime = 0;
+    // currentTime = millis();
+    // static unsigned long lastPositionTime = 0;
         
     while (gpsSerial.available() > 0) {
         char c = gpsSerial.read();
         if (gps.encode(c)) {
-            if (gps.location.isValid() && (currentTime - lastPositionTime >= switchTime)) { // Prüfe, ob eine Sekunde vergangen ist
+            timeStamp = createTimestamp();            
+            if (gps.location.isValid() && (lastPositionTime != timeStamp)) { // Prüfe, ob eine Sekunde vergangen ist
                 setLed(true, GREEN_LED);
-                createTimestamp();
-                Serial.print("Time: ");
-                Serial.print(millis());    
-                Serial.print("Lat: ");
+                dateStamp = createDatestamp();
+                Serial.print("Date: ");
+                Serial.print(dateStamp);        
+                Serial.print(":");
+                Serial.print(timeStamp);   
+                Serial.print(" Boardtime: ");
+                Serial.print(millis());     
+                Serial.print("  Lat: ");
                 Serial.print(gps.location.lat(), 6);
                 Serial.print("  Lon: ");
                 Serial.println(gps.location.lng(), 6);
-                lastPositionTime = currentTime; // Aktualisiere die letzte Ausgabezeit
+                // lastPositionTime = currentTime; // Aktualisiere die letzte Ausgabezeit
+                lastPositionTime = timeStamp; // Aktualisiere die letzte Ausgabezeit                
                 sendGnss(); // Sendet die GNSS-Daten an den FDRS-Gateway (jetzt innerhalb der Zeitschleife)
-                delay(200); // Wartezeit von 3 Sekunden
+                delay(100); // Wartezeit von 3 Sekunden
                 setLed(false, GREEN_LED);
             }   
         }
     }
-    delay(100);
+    delay(10);
 }
