@@ -10,6 +10,12 @@
 #define GPS_RX      16    // ESP32 RX (Input) <- LC76 TX (Output)
 #define GPS_TX      17    // ESP32 TX (Output) -> LC76 RX (Input)
 
+// SD-Karte SPI Schnittstelle
+#define SD_MISO 19
+#define SD_MOSI 23
+#define SD_SCLK 18
+#define SD_CS 5
+
 // Status LED 
 #define GREEN_LED  25    // Grüne LED an GPIO25 (output-fähig)
 #define RED_LED    26    // Rote LED an GPIO26 (output-fähig)

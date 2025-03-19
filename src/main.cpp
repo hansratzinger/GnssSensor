@@ -1,3 +1,4 @@
+// -----------------------------------------------------------------------------
 // G N S S - S E N S O R
 //
 // This code is part of the GNSS sensor project.
@@ -24,6 +25,11 @@
 // -  added the function createTimestamp() to create a timestamp using gps.time
 // -  added the function createDatestamp() to create a datestamp using gps.date
 // -  changed the timing of the GNSS data transmission related to the timestamp
+// Release 1.2.3 HR 2025-03-19 NK
+// -  added the function backupCsv() to backup the GNSS data to the SD card
+// -  added the function sendGnss() to send the GNSS data to the FDRS gateway
+// -----------------------------------------------------------------------------
+// Include the necessary libraries
 // -----------------------------------------------------------------------------
 #include <Arduino.h>
 #include <pins.h>
@@ -31,13 +37,17 @@
 #include <TinyGPSPlus.h>
 #include "fdrs_node_config.h"
 #include <fdrs_node.h>
+#include <SPI.h>
+#include <SD.h>
+#include "SD_module.h"
 
 // Deklaration von Variablen
 const int meterBetweenTwoPoints = 0; // Distanz zwischen zwei Punkten
 const bool TEST = true; // Definition der Konstante TEST
 int lastPositionTime = 0;
 
-int dateStamp = 0;
+int dateStampFdrs = 0;
+int dateStampCsv = 0;
 int timeStamp = 0;
 double lastLat = 0.0;
 double lastLon = 0.0;   
@@ -52,11 +62,6 @@ HardwareSerial gpsSerial(1); // Initialisierung von gpsSerial
 void setLed(bool state, uint8_t pin) {
     pinMode(pin, OUTPUT);
     digitalWrite(pin, state);
-}
-
-int getSwitchTime(int meterBetweenTwoPoints) {
-    float speedMeterPerSecond = gps.speed.kmph() / 3.6;
-    return round((meterBetweenTwoPoints / speedMeterPerSecond)*1000);  // Umrechnung von Sekunden in Millisekunden
 }
 
 void serialTestOutput() {
@@ -92,11 +97,33 @@ int createTimestamp() {
     return hours*10000 + minutes*100 + seconds;
 }
 
-int createDatestamp() {
-    int year = (float)gps.date.year();
+int createDatestampFdrs() {
+    int year = (float)gps.date.year() - 2000;  //  year - 2000
     int month = (float)gps.date.month();
     int day = (float)gps.date.day();
-    return year*10000 + month*100 + day ;
+    int date = day*10000 + month*100 + year ;
+    // Serial.println(year);
+    // Serial.println(month);
+    // Serial.println(day);
+    return date;
+}
+
+int createDatestampCsv() {
+    int year = (float)gps.date.year();  
+    int month = (float)gps.date.month();
+    int day = (float)gps.date.day();
+    int date = year * 10000 + month * 100 + day;
+    // Serial.println(date);
+    return date;
+}
+
+void backupCsv() {
+    // Backup-Daten vorbereiten
+    String backupData = String(dateStampCsv) + "," + String(timeStamp) + "," + String(gps.location.lat(), 6) + "," + String(gps.location.lng(), 6) + "," + String(gps.course.deg()) + "," + String(gps.speed.kmph()) + "," + String(gps.altitude.meters()) + "," + String(gps.hdop.hdop()) + "," + String(gps.satellites.value());
+    // Backup der Daten auf die SD-Karte
+    if (!backupDataToSD(dateStampCsv, backupData, SD_CS)) {
+        Serial.println("Failed to backup data to SD card.");
+    }
 }
 
 void sendGnss() {   // Sendet die RPM-Werte an den FDRS-Gateway   
@@ -115,7 +142,7 @@ void sendGnss() {   // Sendet die RPM-Werte an den FDRS-Gateway
     // float fdrsHEADING = (float)gps.course.deg(); // heading
     // float fdrsSPEED = (float)gps.speed.kmph(); // SPEED KMH
     float fdrsPOSITION_DIFF  = (float)calculateDistance(gps.location.lat(), gps.location.lng(), lastLat, lastLon); // positionDifference
-    float fdrsDATE = (float)dateStamp; // date
+    float fdrsDATE = (float)dateStampFdrs; // date
     float fdrsTIME = (float)timeStamp; // time
     // float fdrsBOARD_TIME = (float)millis(); // second uptime for testing
 
@@ -137,11 +164,6 @@ void sendGnss() {   // Sendet die RPM-Werte an den FDRS-Gateway
     // Speichern der aktuellen Position
     lastLat = gps.location.lat();
     lastLon = gps.location.lng();
-
-    if (TEST) {
-        // Serial.print(String(fdrsYEAR) + String(fdrsMONTH) + String(fdrsDAY) + String(fdrsHOUR) + String(fdrsMINUTE) + String(fdrsSECOND));
-        // Serial.println(" " + String(fdrsLAT) + " " + String(fdrsLON) + " " + String(fdrsALT) + " " + String(fdrsHDOP) + " " + String(fdrsSATS) + " " + String(fdrsLATDIR) + " " + String(fdrsLONDIR) + " " + String(fdrsHEADING) + " " + String(fdrsSPEED) + " " + String(fdrsPOSITION_DIFF));
-    }
       
     // DBG(sendFDRS()); // Debugging 
     if (sendFDRS()) {
@@ -156,7 +178,19 @@ void sendGnss() {   // Sendet die RPM-Werte an den FDRS-Gateway
 void setup() {
     setLed(true, RED_LED);
     Serial.begin(SERIALMONITOR_BAUD);
-    delay(1000);
+    delay(500);
+
+    // Initialisierung der SD-Karte
+    pinMode(SD_MISO, INPUT_PULLUP);
+    SPI.begin(SD_SCLK, SD_MISO, SD_MOSI);
+    if (!SD.begin(SD_CS)) {
+        Serial.println("> It looks like you haven't inserted the SD card..");
+    } else {
+        Serial.println("SD card initialized successfully.");
+        uint32_t cardSize = SD.cardSize() / (1024 * 1024);
+        String str = "> SDCard Size: " + String(cardSize) + "MB";
+        Serial.println(str);
+    }
 
     Serial.println("=====================================");
     Serial.println("======= G N S S - S E N S O R =======");
@@ -186,25 +220,19 @@ void loop() {
     while (gpsSerial.available() > 0) {
         char c = gpsSerial.read();
         if (gps.encode(c)) {
-            timeStamp = createTimestamp();            
-            if (gps.location.isValid() && (lastPositionTime != timeStamp)) { // Prüfe, ob eine Sekunde vergangen ist
-                setLed(true, GREEN_LED);
-                dateStamp = createDatestamp();
-                Serial.print("Date: ");
-                Serial.print(dateStamp);        
-                Serial.print(":");
-                Serial.print(timeStamp);   
-                Serial.print(" Boardtime: ");
-                Serial.print(millis());     
-                Serial.print("  Lat: ");
-                Serial.print(gps.location.lat(), 6);
-                Serial.print("  Lon: ");
-                Serial.println(gps.location.lng(), 6);
-                // lastPositionTime = currentTime; // Aktualisiere die letzte Ausgabezeit
-                lastPositionTime = timeStamp; // Aktualisiere die letzte Ausgabezeit                
-                sendGnss(); // Sendet die GNSS-Daten an den FDRS-Gateway (jetzt innerhalb der Zeitschleife)
-                delay(100); // Wartezeit von 3 Sekunden
-                setLed(false, GREEN_LED);
+            if (gps.location.isValid()) {
+                timeStamp = createTimestamp();
+                if (lastPositionTime != timeStamp) { // Prüfe, ob eine Sekunde vergangen ist
+                    setLed(true, GREEN_LED);
+                    dateStampFdrs = createDatestampFdrs();
+                    dateStampCsv = createDatestampCsv();
+                    if (TEST) { serialTestOutput(); } // Testausgabe                 }
+                    lastPositionTime = timeStamp; // Aktualisiere die letzte Ausgabezeit            
+                    backupCsv(); // Backup der Daten auf die SD-Karte    
+                    sendGnss(); // Sendet die GNSS-Daten an den FDRS-Gateway (jetzt innerhalb der Zeitschleife)
+                    delay(100); // Wartezeit von 3 Sekunden
+                    setLed(false, GREEN_LED);
+                }   
             }   
         }
     }
