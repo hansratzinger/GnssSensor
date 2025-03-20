@@ -14,29 +14,29 @@
 #define SD_MISO 19
 #define SD_MOSI 23
 #define SD_SCLK 18
-#define SD_CS 5
+#define SD_CS    5
 
 // Status LED 
 #define GREEN_LED  25    // Grüne LED an GPIO25 (output-fähig)
 #define RED_LED    26    // Rote LED an GPIO26 (output-fähig)
 
 // FDRS Data Types
-#define STATUS_T         0  // Status 0 = OK, 1 = Error
-#define DATE            01
-#define TIME            02
-#define BOARDTIME       07 // millis() from start of the board
-#define RPM_PACKAGE_NR  16  // RPM Packet Number
-#define DIRECTION_LAT   18 // direction lat 1/N 0/S 
-#define DIRECTION_LON   19 // direction lat 1/N 0/S 
-#define RPM             20 // RPM
-#define LATITUDE_T      21 // GPS Latitude
-#define LONGITUDE_T     22 // GPS Longitude
-#define ALTITUDE_T      23 // GPS Altitude
-#define HDOP_T          24 // GPS HDOP
-#define SATELLITES      25 // satellites
-#define SPEED_KMH       26 // SPEED KMH
-#define HEADING         27 // heading
-#define POSITION_DIFF   28 // positionDifference
+#define STATUS_T           0  // Status 0 = OK, 1 = Error
+#define DATE              01
+#define UTC               02
+#define BOARDTIME_MILLSEC 07 // millis() from start of the board
+#define BOARDTIME_SEC     16  // secounds,millsec
+#define DIRECTION_LAT     18 // direction lat 1/N 0/S 
+#define DIRECTION_LON     19 // direction lat 1/N 0/S 
+#define RPM               20 // RPM
+#define LATITUDE          21 // GPS Latitude
+#define LONGITUDE         22 // GPS Longitude
+#define ALTITUDE_T        23 // GPS Altitude
+#define HDOP_T            24 // GPS HDOP
+#define SATELLITES        25 // satellites
+#define SPEED_KMH         26 // SPEED KMH
+#define HEADING           27 // heading
+#define POSITION_DISTANCE 28 // positionDifference
 
 #define SERIALMONITOR_BAUD 115200
 #define GPS_BAUD 115200

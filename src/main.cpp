@@ -97,10 +97,15 @@ int createTimestamp() {
     return hours*10000 + minutes*100 + seconds;
 }
 
+String createTimestampCsv() {
+    String timestamp = String(gps.time.hour()) + String(gps.time.minute()) + String(gps.time.second());
+    return timestamp;
+}
+
 int createDatestampFdrs() {
-    int year = (float)gps.date.year() - 2000;  //  year - 2000
-    int month = (float)gps.date.month();
-    int day = (float)gps.date.day();
+    int year = gps.date.year() - 2000;  //  year - 2000
+    int month = gps.date.month();
+    int day = gps.date.day();
     int date = day*10000 + month*100 + year ;
     // Serial.println(year);
     // Serial.println(month);
@@ -108,18 +113,14 @@ int createDatestampFdrs() {
     return date;
 }
 
-int createDatestampCsv() {
-    int year = (float)gps.date.year();  
-    int month = (float)gps.date.month();
-    int day = (float)gps.date.day();
-    int date = year * 10000 + month * 100 + day;
-    // Serial.println(date);
-    return date;
+String createDatestampCsv() {
+    String datestamp = String(gps.date.year()) + String(gps.date.month()) + String(gps.date.day());
+    return datestamp;
 }
 
 void backupCsv() {
     // Backup-Daten vorbereiten
-    String backupData = String(dateStampCsv) + "," + String(timeStamp) + "," + String(gps.location.lat(), 6) + "," + String(gps.location.lng(), 6) + "," + String(gps.course.deg()) + "," + String(gps.speed.kmph()) + "," + String(gps.altitude.meters()) + "," + String(gps.hdop.hdop()) + "," + String(gps.satellites.value());
+    String backupData = String(dateStampCsv) + "," + String(timeStamp) + "," + String(gps.location.lat(), 6) + "," + String(gps.location.lng(), 6) + "," + String(gps.satellites.value());
     // Backup der Daten auf die SD-Karte
     if (!backupDataToSD(dateStampCsv, backupData, SD_CS)) {
         Serial.println("Failed to backup data to SD card.");
@@ -141,24 +142,24 @@ void sendGnss() {   // Sendet die RPM-Werte an den FDRS-Gateway
     // float fdrsLONDIR = (fdrsLON >= 0) ? 1 : 0; // 1 für Ost, 0 für West
     // float fdrsHEADING = (float)gps.course.deg(); // heading
     // float fdrsSPEED = (float)gps.speed.kmph(); // SPEED KMH
-    float fdrsPOSITION_DIFF  = (float)calculateDistance(gps.location.lat(), gps.location.lng(), lastLat, lastLon); // positionDifference
+    // float fdrsPOSITION_DISTANCE  = (float)calculateDistance(gps.location.lat(), gps.location.lng(), lastLat, lastLon); // positionDifference
     float fdrsDATE = (float)dateStampFdrs; // date
     float fdrsTIME = (float)timeStamp; // time
     // float fdrsBOARD_TIME = (float)millis(); // second uptime for testing
 
     // Load FDRS data
     // loadFDRS(fdrsSPEED, SPEED);
-    loadFDRS(fdrsLAT, LATITUDE_T);
-    loadFDRS(fdrsLON, LONGITUDE_T);
+    loadFDRS(fdrsLAT, LATITUDE);
+    loadFDRS(fdrsLON, LONGITUDE);
     // loadFDRS(fdrsALT, ALTITUDE_T);
     // loadFDRS(fdrsHDOP, HDOP_T);
     // loadFDRS(fdrsSATS, SATELLITES);
     // loadFDRS(fdrsLATDIR, DIRECTION_LAT);
     // loadFDRS(fdrsLONDIR, DIRECTION_LON);
     // loadFDRS(fdrsHEADING, HEADING);
-    loadFDRS(fdrsPOSITION_DIFF , POSITION_DIFF);
+    // loadFDRS(fdrsPOSITION_DISTANCE , POSITION_DISTANCE);
     loadFDRS(fdrsDATE, DATE);
-    loadFDRS(fdrsTIME, TIME);
+    loadFDRS(fdrsTIME, UTC);
     // loadFDRS(fdrsBOARD_TIME, BOARDTIME);
 
     // Speichern der aktuellen Position
