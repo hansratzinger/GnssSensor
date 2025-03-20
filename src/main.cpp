@@ -28,6 +28,12 @@
 // Release 1.2.3 HR 2025-03-19 NK
 // -  added the function backupCsv() to backup the GNSS data to the SD card
 // -  added the function sendGnss() to send the GNSS data to the FDRS gateway
+// Release 1.2.4 HR 2025-03-20 NK
+// -  added the function createTimestampCsv() to create a timestamp in CSV format
+// -  added the function createDatestampCsv() to create a datestamp in CSV format
+// -  added the function backupDataToSD() to backup the GNSS data to the SD card
+// -  added the function createFilename() to create a filename based on the datestamp
+// -  added the function initializeSD() to initialize the SD card
 // -----------------------------------------------------------------------------
 // Include the necessary libraries
 // -----------------------------------------------------------------------------
