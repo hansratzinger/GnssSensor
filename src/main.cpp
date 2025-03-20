@@ -44,11 +44,12 @@
 // Deklaration von Variablen
 const int meterBetweenTwoPoints = 0; // Distanz zwischen zwei Punkten
 const bool TEST = true; // Definition der Konstante TEST
-int lastPositionTime = 0;
-
+int lastPositionTime = 0; // Zeitstempel der letzten Position
+int timeStampFdrs = 0;
 int dateStampFdrs = 0;
-int dateStampCsv = 0;
-int timeStamp = 0;
+String dateStampCsv = "";
+String timeStampCsv = "";
+
 double lastLat = 0.0;
 double lastLon = 0.0;   
 
@@ -90,15 +91,28 @@ void serialTestOutput() {
     Serial.println();
 }
 
-int createTimestamp() {
-    int hours = (float)gps.time.hour();
-    int minutes = (float)gps.time.minute();
-    int seconds = (float)gps.time.second();
-    return hours*10000 + minutes*100 + seconds;
+int createTimestampFdrs() {
+    int hours = gps.time.hour();
+    int minutes = gps.time.minute();
+    int seconds = gps.time.second();
+    int timestamp = hours*10000 + minutes*100 + seconds;
+    return timestamp;
 }
 
 String createTimestampCsv() {
-    String timestamp = String(gps.time.hour()) + String(gps.time.minute()) + String(gps.time.second());
+    String timestamp ="";
+    if (gps.time.hour() < 10) {
+        timestamp = "0";
+    }
+    timestamp += String(gps.time.hour()) + ":";
+    if (gps.time.minute() < 10) {
+        timestamp += "0";
+    }
+    timestamp += String(gps.time.minute()) + ":";
+    if (gps.time.second() < 10) {
+        timestamp += "0";
+    }
+    timestamp += String(gps.time.second());
     return timestamp;
 }
 
@@ -114,13 +128,23 @@ int createDatestampFdrs() {
 }
 
 String createDatestampCsv() {
-    String datestamp = String(gps.date.year()) + String(gps.date.month()) + String(gps.date.day());
+    String datestamp = String(gps.date.year());
+    if (gps.date.month() < 10) {
+        datestamp += "0";
+    }
+    datestamp += String(gps.date.month());
+    if (gps.date.day() < 10) {
+        datestamp += "0";
+    }
+    datestamp += String(gps.date.day());
     return datestamp;
 }
 
 void backupCsv() {
     // Backup-Daten vorbereiten
-    String backupData = String(dateStampCsv) + "," + String(timeStamp) + "," + String(gps.location.lat(), 6) + "," + String(gps.location.lng(), 6) + "," + String(gps.satellites.value());
+    String dateStampCsv = createDatestampCsv();
+    String timeStampCsv = createTimestampCsv();
+    String backupData = String(dateStampCsv) + "," + String(timeStampCsv) + "," + String(gps.location.lat(), 6) + "," + String(gps.location.lng(), 6) + "," + String(gps.satellites.value());
     // Backup der Daten auf die SD-Karte
     if (!backupDataToSD(dateStampCsv, backupData, SD_CS)) {
         Serial.println("Failed to backup data to SD card.");
@@ -144,7 +168,7 @@ void sendGnss() {   // Sendet die RPM-Werte an den FDRS-Gateway
     // float fdrsSPEED = (float)gps.speed.kmph(); // SPEED KMH
     // float fdrsPOSITION_DISTANCE  = (float)calculateDistance(gps.location.lat(), gps.location.lng(), lastLat, lastLon); // positionDifference
     float fdrsDATE = (float)dateStampFdrs; // date
-    float fdrsTIME = (float)timeStamp; // time
+    float fdrsTIME = (float)timeStampFdrs; // time
     // float fdrsBOARD_TIME = (float)millis(); // second uptime for testing
 
     // Load FDRS data
@@ -221,14 +245,14 @@ void loop() {
     while (gpsSerial.available() > 0) {
         char c = gpsSerial.read();
         if (gps.encode(c)) {
-            if (gps.location.isValid()) {
-                timeStamp = createTimestamp();
-                if (lastPositionTime != timeStamp) { // Prüfe, ob eine Sekunde vergangen ist
+            if (gps.location.isValid() && gps.date.isValid() && gps.time.isValid()) {
+                timeStampFdrs = createTimestampFdrs();
+                if (lastPositionTime != timeStampFdrs) { // Prüfe, ob eine Sekunde vergangen ist
                     setLed(true, GREEN_LED);
                     dateStampFdrs = createDatestampFdrs();
                     dateStampCsv = createDatestampCsv();
                     if (TEST) { serialTestOutput(); } // Testausgabe                 }
-                    lastPositionTime = timeStamp; // Aktualisiere die letzte Ausgabezeit            
+                    lastPositionTime = timeStampFdrs; // Aktualisiere die letzte Ausgabezeit            
                     backupCsv(); // Backup der Daten auf die SD-Karte    
                     sendGnss(); // Sendet die GNSS-Daten an den FDRS-Gateway (jetzt innerhalb der Zeitschleife)
                     delay(100); // Wartezeit von 3 Sekunden

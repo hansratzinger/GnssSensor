@@ -5,7 +5,7 @@
 
 // Deklaration der Funktionen
 bool initializeSD(int csPin);
-String createFilename(int dateStamp);
-bool backupDataToSD(int dateStamp, const String &data, int csPin);
+String createFilename(String dateStamp);
+bool backupDataToSD(String dateStamp, const String &data, int csPin);
 
 #endif // SD_MODULE_H

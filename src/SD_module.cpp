@@ -2,12 +2,13 @@
 #include <SD.h>
 
 // Funktion zum Erstellen des Dateinamens basierend auf dem Datum
-String createFilename(int dateStamp) {
+String createFilename(String dateStamp) {
     return "/backup_" + String(dateStamp) + ".csv";
 }
 
 // Funktion zum Schreiben von Daten in die CSV-Datei
-bool backupDataToSD(int dateStamp, const String &data, int csPin) {
+bool backupDataToSD(String dateStamp, const String &data, int csPin) {
+    
     String filename = createFilename(dateStamp);
 
     // Öffne die Datei im Anhängemodus
