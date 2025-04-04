@@ -157,11 +157,8 @@ void backupCsv() {
     }
 }
 
-void sendGnss() {   // Sendet die RPM-Werte an den FDRS-Gateway   
-    if (!gps.location.isValid() || !gps.date.isValid() || !gps.time.isValid()) {
-        Serial.println("Invalid GPS data");
-        return;
-    }
+// Aktualisierte sendGnss()-Funktion
+void sendGnss() {
     // FDRS data types  
     // float fdrsALT = (float)gps.altitude.meters(); // GPS Altitude
     // float fdrsHDOP = (float)gps.hdop.hdop(); // GPS HDOP
@@ -206,6 +203,31 @@ void sendGnss() {   // Sendet die RPM-Werte an den FDRS-Gateway
     }
 }
 
+// Funktion zum Senden einer Testnachricht
+void sendTestMessage() {
+    Serial.println("Sending test message via sendGnss()...");
+    // Testdaten für GNSS
+    float testLat = 0.0;  // Dummy Latitude
+    float testLon = 0.0;  // Dummy Longitude
+    float testDate = 999999.0; // Dummy Date
+    float testTime = 999999.0; // Dummy Time
+
+    // Lade die Testdaten in FDRS
+    loadFDRS(testLat, LATITUDE);
+    loadFDRS(testLon, LONGITUDE);
+    loadFDRS(testDate, DATE);
+    loadFDRS(testTime, UTC);
+
+    // Sende die Testdaten
+    if (sendFDRS()) {
+        Serial.println("Test message sent successfully.");
+        setLed(false, RED_LED);
+    } else {
+        Serial.println("Failed to send test message.");
+        setLed(true, RED_LED);
+    }
+}
+
 void setup() {
     setLed(true, RED_LED);
     Serial.begin(SERIALMONITOR_BAUD);
@@ -242,30 +264,41 @@ void setup() {
     Serial.println(GPS_RX);
     Serial.print("GPS_TX: ");
     Serial.println(GPS_TX);
-
-    setLed(false, RED_LED);
-    setLed(true, GREEN_LED);
+    
 }
 
+// Aktualisierte loop()-Methode
 void loop() {
     while (gpsSerial.available() > 0) {
+        setLed(true, GREEN_LED);
         char c = gpsSerial.read();
         if (gps.encode(c)) {
             if (gps.location.isValid() && gps.date.isValid() && gps.time.isValid()) {
+                setLed(false, RED_LED); 
                 timeStampFdrs = createTimestampFdrs();
                 if (lastPositionTime != timeStampFdrs) { // Prüfe, ob eine Sekunde vergangen ist
                     setLed(true, GREEN_LED);
                     dateStampFdrs = createDatestampFdrs();
                     dateStampCsv = createDatestampCsv();
-                    if (TEST) { serialTestOutput(); } // Testausgabe                 }
+                    if (TEST) { serialTestOutput(); } // Testausgabe
                     lastPositionTime = timeStampFdrs; // Aktualisiere die letzte Ausgabezeit            
                     backupCsv(); // Backup der Daten auf die SD-Karte    
-                    sendGnss(); // Sendet die GNSS-Daten an den FDRS-Gateway (jetzt innerhalb der Zeitschleife)
-                    delay(100); // Wartezeit von 3 Sekunden
-                    setLed(false, GREEN_LED);
-                }   
-            }   
+                    sendGnss(); // Sendet die GNSS-Daten an den FDRS-Gateway
+                    setLed(false, GREEN_LED); 
+                    delay(250); // Wartezeit zwischen den Ausgaben
+                }
+            } else {
+                // Keine valide Position, Testnachricht senden
+                setLed(true, RED_LED);
+                setLed(false, GREEN_LED); // Setze die grüne LED zurück
+                sendTestMessage(); // sendGnss() wird aufgerufen, um die Testnachricht zu senden
+                delay(250); // Wartezeit zwischen den Ausgaben
+                setLed(false, RED_LED); 
+                setLed(true, GREEN_LED); // Setze die grüne LED zurück  
+            }
         }
     }
     delay(10);
+    setLed(true, RED_LED); // Aktiviere die rote LED, wenn keine Daten empfangen werden
+    setLed(false, GREEN_LED); // Setze die grüne LED zurück, wenn keine Daten empfangen werden
 }
