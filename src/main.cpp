@@ -154,6 +154,9 @@ void backupCsv() {
     // Backup der Daten auf die SD-Karte
     if (!backupDataToSD(dateStampCsv, backupData, SD_CS)) {
         Serial.println("Failed to backup data to SD card.");
+        setLed(true, RED_LED);
+    } else {
+        setLed(false, RED_LED);
     }
 }
 
@@ -197,13 +200,13 @@ void sendGnss() {   // Sendet die RPM-Werte an den FDRS-Gateway
     lastLon = gps.location.lng();
       
     // DBG(sendFDRS()); // Debugging 
-    if (sendFDRS()) {
-        DBG("Big Success!");
-        setLed(false, RED_LED);
-    } else {
-        DBG("Nope, not so much.");
-        setLed(true, RED_LED);
-    }
+    // if (sendFDRS()) {
+    //     DBG("Big Success!");
+    //     setLed(false, RED_LED);
+    // } else {
+    //     DBG("Nope, not so much.");
+    //     setLed(true, RED_LED);
+    // }
 }
 
 void setup() {
@@ -260,8 +263,8 @@ void loop() {
                     if (TEST) { serialTestOutput(); } // Testausgabe                 }
                     lastPositionTime = timeStampFdrs; // Aktualisiere die letzte Ausgabezeit            
                     backupCsv(); // Backup der Daten auf die SD-Karte    
-                    sendGnss(); // Sendet die GNSS-Daten an den FDRS-Gateway (jetzt innerhalb der Zeitschleife)
-                    delay(100); // Wartezeit von 3 Sekunden
+                    // sendGnss(); // Sendet die GNSS-Daten an den FDRS-Gateway (jetzt innerhalb der Zeitschleife)
+                    delay(500); // Wartezeit von 0,5Sekunden
                     setLed(false, GREEN_LED);
                 }   
             }   
