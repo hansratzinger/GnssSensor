@@ -34,6 +34,8 @@
 // -  added the function backupDataToSD() to backup the GNSS data to the SD card
 // -  added the function createFilename() to create a filename based on the datestamp
 // -  added the function initializeSD() to initialize the SD card
+// Release 1.2.5 HR 2025-07-27 NK
+// -  removed the function sendGnss() as it is not used anymore
 // -----------------------------------------------------------------------------
 // Include the necessary libraries
 // -----------------------------------------------------------------------------
@@ -41,8 +43,6 @@
 #include <pins.h>
 #include "GNSS_module.h"
 #include <TinyGPSPlus.h>
-#include "fdrs_node_config.h"
-#include <fdrs_node.h>
 #include <SPI.h>
 #include <SD.h>
 #include "SD_module.h"
@@ -160,55 +160,6 @@ void backupCsv() {
     }
 }
 
-void sendGnss() {   // Sendet die RPM-Werte an den FDRS-Gateway   
-    if (!gps.location.isValid() || !gps.date.isValid() || !gps.time.isValid()) {
-        Serial.println("Invalid GPS data");
-        return;
-    }
-    // FDRS data types  
-    // float fdrsALT = (float)gps.altitude.meters(); // GPS Altitude
-    // float fdrsHDOP = (float)gps.hdop.hdop(); // GPS HDOP
-    // float fdrsSATS = (float)gps.satellites.value(); // satellites   
-    float fdrsLAT = (float)gps.location.lat();
-    float fdrsLON = (float)gps.location.lng(); // GPS Longitude
-    // float fdrsLATDIR = (fdrsLAT >= 0) ? 1 : 0; // 1 für Nord, 0 für Süd
-    // float fdrsLONDIR = (fdrsLON >= 0) ? 1 : 0; // 1 für Ost, 0 für West
-    // float fdrsHEADING = (float)gps.course.deg(); // heading
-    // float fdrsSPEED = (float)gps.speed.kmph(); // SPEED KMH
-    // float fdrsPOSITION_DISTANCE  = (float)calculateDistance(gps.location.lat(), gps.location.lng(), lastLat, lastLon); // positionDifference
-    float fdrsDATE = (float)dateStampFdrs; // date
-    float fdrsTIME = (float)timeStampFdrs; // time
-    // float fdrsBOARD_TIME = (float)millis(); // second uptime for testing
-
-    // Load FDRS data
-    // loadFDRS(fdrsSPEED, SPEED);
-    loadFDRS(fdrsLAT, LATITUDE);
-    loadFDRS(fdrsLON, LONGITUDE);
-    // loadFDRS(fdrsALT, ALTITUDE_T);
-    // loadFDRS(fdrsHDOP, HDOP_T);
-    // loadFDRS(fdrsSATS, SATELLITES);
-    // loadFDRS(fdrsLATDIR, DIRECTION_LAT);
-    // loadFDRS(fdrsLONDIR, DIRECTION_LON);
-    // loadFDRS(fdrsHEADING, HEADING);
-    // loadFDRS(fdrsPOSITION_DISTANCE , POSITION_DISTANCE);
-    loadFDRS(fdrsDATE, DATE);
-    loadFDRS(fdrsTIME, UTC);
-    // loadFDRS(fdrsBOARD_TIME, BOARDTIME);
-
-    // Speichern der aktuellen Position
-    lastLat = gps.location.lat();
-    lastLon = gps.location.lng();
-      
-    // DBG(sendFDRS()); // Debugging 
-    // if (sendFDRS()) {
-    //     DBG("Big Success!");
-    //     setLed(false, RED_LED);
-    // } else {
-    //     DBG("Nope, not so much.");
-    //     setLed(true, RED_LED);
-    // }
-}
-
 void setup() {
     setLed(true, RED_LED);
     Serial.begin(SERIALMONITOR_BAUD);
@@ -237,7 +188,7 @@ void setup() {
     delay(100);
 
     // FDRS Setup 
-    beginFDRS(); // Initialisiert FDRS 
+    // beginFDRS(); // Initialisiert FDRS 
     Serial.println("Setup finished!");
     delay(1000);
 
@@ -262,8 +213,7 @@ void loop() {
                     dateStampCsv = createDatestampCsv();
                     if (TEST) { serialTestOutput(); } // Testausgabe                 }
                     lastPositionTime = timeStampFdrs; // Aktualisiere die letzte Ausgabezeit            
-                    backupCsv(); // Backup der Daten auf die SD-Karte    
-                    // sendGnss(); // Sendet die GNSS-Daten an den FDRS-Gateway (jetzt innerhalb der Zeitschleife)
+                    backupCsv(); // Backup der Daten auf die SD-Karte 
                     delay(500); // Wartezeit von 0,5Sekunden
                     setLed(false, GREEN_LED);
                 }   
